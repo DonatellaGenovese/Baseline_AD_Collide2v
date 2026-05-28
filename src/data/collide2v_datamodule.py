@@ -18,7 +18,7 @@ from src.data.utils import (
     worker_init_fn,
 )
 
-from src.preprocessing.preprocess import PreprocessingPipeline
+from src.proprocessing.preprocess import PreprocessingPipeline
 
 
 class COLLIDE2VDataModule(LightningDataModule):
@@ -75,8 +75,15 @@ class COLLIDE2VDataModule(LightningDataModule):
         preprocess: Optional[Dict[str, Any]] = None,
         to_classify: Optional[List[str]] = None,
         process_to_folder: Optional[Dict[str, str]] = None,
+        background_class: Optional[str] = None,
     ):
-        """Initialize a `COLLIDE2VDataModule`."""
+        """Initialize a `COLLIDE2VDataModule`.
+
+        Args:
+            background_class: if set, training uses only this class (AD mode).
+                val/test dataloaders still include all classes in `to_classify`
+                so that AUC can be computed against the signal.
+        """
         super().__init__()
 
         # this line allows to access init params with 'self.hparams' attribute
@@ -91,12 +98,23 @@ class COLLIDE2VDataModule(LightningDataModule):
         self.datasets_config = datasets_config or {}
         self.preprocess_cfg = preprocess or {}
         self.process_to_folder = process_to_folder or {}
+        self.background_class = background_class
 
         self.vlen = compute_vlen(self.datasets_config)
 
         self.classnames = to_classify or []
         self.folder = {c: self.process_to_folder[c] for c in self.classnames}
         self.labels = {c: i for i, c in enumerate(self.classnames)}
+
+        # classes used for training: background only (AD) or all (supervised)
+        if background_class is not None:
+            if background_class not in self.classnames:
+                raise ValueError(
+                    f"background_class '{background_class}' not found in to_classify {self.classnames}"
+                )
+            self.train_classnames = [background_class]
+        else:
+            self.train_classnames = self.classnames
 
         self.data_train: Optional[Dataset] = None
         self.data_val: Optional[Dataset] = None
@@ -192,17 +210,31 @@ class COLLIDE2VDataModule(LightningDataModule):
             self.train_val_test_split_per_class,
             self.classnames,
             self.folder,
+            train_classnames=self.train_classnames,
         ):
             print(f"🟡 Preprocessed data found — using from {self.paths['eos_preproc_dir']}")
-            self.trainstream = LocalVectorDataset(os.path.join(self.paths["eos_preproc_dir"], "train"),
-                                                  per_class_limit=self.train_val_test_split_per_class[0],
-                                                  shuffle_file_order=True, classnames=self.classnames, folder_map=self.folder)
-            self.valstream = LocalVectorDataset(os.path.join(self.paths["eos_preproc_dir"], "val"),
-                                                per_class_limit=self.train_val_test_split_per_class[1],
-                                                shuffle_file_order=False, classnames=self.classnames, folder_map=self.folder)
-            self.teststream = LocalVectorDataset(os.path.join(self.paths["eos_preproc_dir"], "test"),
-                                                 per_class_limit=self.train_val_test_split_per_class[2],
-                                                 shuffle_file_order=False, classnames=self.classnames, folder_map=self.folder)
+            # AD mode: train on background only; val/test on all classes for AUC
+            self.trainstream = LocalVectorDataset(
+                os.path.join(self.paths["eos_preproc_dir"], "train"),
+                per_class_limit=self.train_val_test_split_per_class[0],
+                shuffle_file_order=True,
+                classnames=self.train_classnames,
+                folder_map=self.folder,
+            )
+            self.valstream = LocalVectorDataset(
+                os.path.join(self.paths["eos_preproc_dir"], "val"),
+                per_class_limit=self.train_val_test_split_per_class[1],
+                shuffle_file_order=False,
+                classnames=self.classnames,
+                folder_map=self.folder,
+            )
+            self.teststream = LocalVectorDataset(
+                os.path.join(self.paths["eos_preproc_dir"], "test"),
+                per_class_limit=self.train_val_test_split_per_class[2],
+                shuffle_file_order=False,
+                classnames=self.classnames,
+                folder_map=self.folder,
+            )
         else:
             raise RuntimeError(
                 f"❌ Preprocessed data not found in {self.paths['eos_preproc_dir']} or not enough files present.\n"
@@ -211,7 +243,6 @@ class COLLIDE2VDataModule(LightningDataModule):
             )
 
         self.shuffled_train = ShuffleBuffer(self.trainstream, buffer_size=100000)
-        self.shuffled_val = ShuffleBuffer(self.valstream, buffer_size=100000)
 
     def train_dataloader(self) -> DataLoader[Any]:
         """Create and return the train dataloader.
@@ -233,7 +264,7 @@ class COLLIDE2VDataModule(LightningDataModule):
         :return: The validation dataloader.
         """
         return DataLoader(
-            dataset=self.shuffled_val,
+            dataset=self.valstream,
             batch_size=self.batch_size_per_device,
             num_workers=0,
             pin_memory=self.pin_memory,

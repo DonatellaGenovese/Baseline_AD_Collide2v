@@ -1,0 +1,16 @@
+_target_: src.models.ae_module.AELitModule
+
+latent_dim: 16
+hidden_dims: [256, 128, 64]
+
+lr: 1e-4
+weight_decay: 1e-4
+compile: false
+
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: ${model.lr}
+  weight_decay: ${model.weight_decay}
+
+scheduler: null

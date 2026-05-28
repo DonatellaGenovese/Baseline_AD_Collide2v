@@ -1,40 +1,25 @@
 # @package _global_
 
-# to execute this experiment run:
-# python train.py experiment=fm_testing
+# Train an Autoencoder for anomaly detection on QCD (background only).
+# Anomaly score = reconstruction MSE. Val/test AUC evaluated on QCD vs VBFHbb.
+#
+# Run with:
+#   python src/train.py experiment=ad_ae
 
 defaults:
-  - override /data: collide2v_basic
+  - override /data: collide2v_ad
+  - override /model: ae
   - override /callbacks: default
   - override /trainer: gpu
 
-# all parameters below will be merged with parameters from default configurations set above
-# this allows you to overwrite only specified parameters
-
-tags: ["collide2v", "tinyTransformer", "18class"]
+tags: ["collide2v", "autoencoder", "anomaly_detection"]
 
 data:
-  train_val_test_split_per_class: [1_000_000, 100_000, 100_000]
-  label: "v2_18class_highlevel"
+  train_val_test_split_per_class: [500_000, 20_000, 20_000]
+  label: "AD_QCD_VBFHbb"
   to_classify:
     - "QCD_inclusive"
-    - "DY_to_ll"
-    - "Z_to_vv_jet"
-    - "Z_to_qq_uds"
-    - "Z_to_bb"
-    - "Z_to_cc"
-    - "W_to_lv"
-    - "W_to_qq"
-    - "gamma"
-    - "QCD_bb"
-    - "tt_all-hadr"
-    - "tt_semi-lept"
-    - "tt_all-lept"
-    - "Minbias_Soft_QCD"
-    - "Upsilon_to_Leptons"
     - "VBFHbb"
-    - "HH_4b"
-    - "ggHtautau"
   datasets_config:
     jets:
       cols:
@@ -87,38 +72,23 @@ data:
       cols:
         - FullReco_PUPPIMET_MET
         - FullReco_PUPPIMET_Phi
-      topk: null   # scalar values
+      topk: null
       count: false
-
-
-
 
 trainer:
   min_epochs: 1
-  max_epochs: 50
+  max_epochs: 100
   gradient_clip_algorithm: norm
-  gradient_clip_val: 0.0
-  accumulate_grad_batches: 8
+  gradient_clip_val: 1.0
 
+model:
+  latent_dim: 16
+  hidden_dims: [256, 128, 64]
 
-#callbacks:
-#  early_stopping:
-#    monitor: "val/acc"
-#    min_delta: 0.0001
-#    patience: 10
-
-
-#model:
-#  scheduler:
-#    _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
-#    _partial_: true
-#    patience: 2
-#    factor: 0.5
-#    min_lr: 1e-06
 preprocess:
   enabled: true
 
 logger:
   mlflow:
-    run_name: "18_class_scheduler_sweep"
-    experiment_name: "multi_class_classification_scheduler"
+    run_name: "AE_QCD_VBFHbb"
+    experiment_name: "anomaly_detection"

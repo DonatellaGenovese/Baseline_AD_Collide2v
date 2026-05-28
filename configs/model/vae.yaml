@@ -1,0 +1,24 @@
+_target_: src.models.vae_module.VAELitModule
+
+latent_dim: 16
+hidden_dims: [256, 128, 64]
+
+# Weight of the KL term in the ELBO: loss = recon + beta * KL
+# beta=1 is standard VAE; beta<1 relaxes the prior pressure (useful when AD
+# performance degrades because the latent space is too tightly constrained).
+beta: 1.0
+
+# Anomaly score used for AUROC: "reconstruction" (MSE only) or "elbo" (MSE + beta*KL)
+anomaly_score_type: "reconstruction"
+
+lr: 1e-4
+weight_decay: 1e-4
+compile: false
+
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: ${model.lr}
+  weight_decay: ${model.weight_decay}
+
+scheduler: null

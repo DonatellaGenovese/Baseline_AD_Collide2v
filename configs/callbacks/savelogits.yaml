@@ -1,3 +1,0 @@
-savelogits:
-  _target_: src.callbacks.savelogits.SaveLogits
-  include_classnames: true

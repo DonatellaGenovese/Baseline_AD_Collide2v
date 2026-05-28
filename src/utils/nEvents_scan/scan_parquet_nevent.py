@@ -70,7 +70,7 @@ def scan_dataset(base_dir: str, process_to_folder: dict, output_json: str, n_wor
 
 if __name__ == "__main__":
     # --- Load your Hydra data config ---
-    cfg = OmegaConf.load("configs/data/collide2v_basic.yaml")
+    cfg = OmegaConf.load("configs/data/collide2v_ad.yaml")
 
     # Base directory of all Parquet folders
     base_dir = cfg.get("base_dir", "/eos/project/f/foundational-model-dataset/samples/production_final")

@@ -1,9 +1,9 @@
 # @package _global_
 
 defaults:
-  - data: collide2v_basic # choose datamodule with `test_dataloader()` for evaluation
+  - data: collide2v_ad
   - preprocess: collide2v
-  - model: tinyTransformer
+  - model: ae
   - callbacks: default
   - logger: mlflow
   - trainer: gpu
@@ -11,22 +11,19 @@ defaults:
   - extras: default
   - hydra: default
 
-  # choose experiment config with matching data and preprocessing settings to trained model, set use_trial_config: true to overwrite with
-  # the saved config.yaml Hydra config from the exact training run that produced the checkpoint given below
-  - experiment: fm_testing_18class_highlevel
+  - experiment: ad_ae
 
   - _self_
 
 task_name: "eval"
 
-# choose a run name and experiment name for logging evaluation results to MLflow
 logger:
   mlflow:
     run_name: "best_run_evaluation"
-    experiment_name: "debug"
+    experiment_name: "anomaly_detection"
 
 tags: ["dev"]
 
 # passing checkpoint path is necessary for evaluation
-ckpt_path: /afs/cern.ch/work/p/phploner/foundation_model_testing/logs/train/multiruns/2026-01-31_16-02-51/10/checkpoints/epoch_047.ckpt
+ckpt_path: null
 use_trial_config: true

@@ -5,9 +5,9 @@
 defaults:
   - _self_
   - paths: fm_testing
-  - data: collide2v_basic
+  - data: collide2v_ad
   - preprocess: collide2v
-  - model: tinyTransformer
+  - model: ae
   - callbacks: default
   - logger: mlflow # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: cpu
@@ -16,7 +16,7 @@ defaults:
 
   # experiment configs allow for version control of specific hyperparameters
   # e.g. best hyperparameters for given model and datamodule
-  - experiment: fm_testing_18class_highlevel
+  - experiment: ad_ae
 
   # config for hyperparameter optimization
   - hparams_search: null

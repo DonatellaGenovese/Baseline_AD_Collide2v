@@ -1,14 +1,17 @@
 _target_: src.data.collide2v_datamodule.COLLIDE2VDataModule
-batch_size: 2048 # Needs to be divisible by the number of devices (e.g., if in a distributed setup)
-train_val_test_split_per_class: [9_960_000, 20_000, 20_000]
+batch_size: 2048
+train_val_test_split_per_class: [500_000, 20_000, 20_000]
 num_workers: 6
 pin_memory: true
 
 preprocess: ${preprocess}
 
-
 # IMPORTANT: IF YOU CHANGE THE SPLITS OR ANY DATASET CONFIG, CHOOSE A NEW LABEL OR DELETE DATA FOR EXISTING LABELS TO AVOID CONFLICTS!
-label: "QCD_ggHbb_upscaled"  # label to be used for folder name of vectorized and preprocessed data
+label: "AD_QCD_VBFHbb"
+
+# AD MODE: train on background only, val/test on background + signal for AUC evaluation.
+# Set to the name of the background class in to_classify.
+background_class: "QCD_inclusive"
 
 paths:
   tmp_vec_dir: ${paths.tmp_data_dir}/${data.label}/vectorized/
@@ -18,31 +21,15 @@ paths:
   dataset_dir: ${paths.dataset_dir}
 
 # SPECIFY HERE WHICH COLUMNS OF THE DATASET TO TAKE FOR THE TRAINING
-# The columns are given in groups (e.g. particles, jets etc.)
-# cols: are the specific columns to be read
-# topk: are the amount of objects to be taken from the columns, they are sorted in descending order w.r.t. the first col
-# e.g. "particles": {
-#       "cols": [
-#           "FullReco_PUPPIPart_PT",
-#           "FullReco_PUPPIPart_Eta",
-#           "FullReco_PUPPIPart_Phi",
-#       ]
-#       "topk": 20,
-# takes the 20 particles with the highest PT (first col) and sorts them from highest to lowest
-# topk = 1 means only the highest object w.r.t the first column is taken
-# topk = None is used for scalar values where no ordering/selecting needs to be done (e.g. MET)
-# count: is a bool that specifies if an additional column should be made with the total number of objects (e.g. # of particles)
-
+# datasets_config is defined in the experiment config (e.g. experiment/ad_ae.yaml)
 datasets_config:
 
 
-# SPECIFY HERE WHICH PROCESSES TO USE FOR THE CLASSIFIER TRAINING
-# The keys are labels used in the training
-# The values are the exact process names as in the list below
-
-# To_classify is a list of process names, all available names are in the process_to_folder mapping below
-
+# Background + signal classes.
+# Training uses only background_class above; val/test use all of these for AUC.
 to_classify:
+  - "QCD_inclusive"   # label 0 — background
+  - "VBFHbb"          # label 1 — signal
 
 
 # The mappings from processes to respective COLLIDE2V folders:
@@ -96,7 +83,7 @@ process_to_folder:
   "VBFHtautau": "VBFHtautau"
   "VBFHWW": "VBFHWW"
   "VBFHZZ": "VBFHZZ"
-  # di-HiggS
+  # di-Higgs
   "HH_4b": "HH_4b"
   "HH_bbtautau": "HH_bbtautau"
   "HH_bbWW": "HH_bbWW"

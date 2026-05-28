@@ -191,7 +191,7 @@ def move_to_eos(local_dir: str, eos_dir: str):
 
 def load_global_filelist() -> dict:
     """Load the precomputed file event counts JSON from nEvents_scan."""
-    base_path = Path("/afs/.cern.ch/work/p/phploner/foundation_model_testing/src/utils/nEvents_scan/file_event_counts.json")
+    base_path = Path(__file__).parent.parent / "utils/nEvents_scan/file_event_counts.json"
     if not base_path.exists():
         raise FileNotFoundError(f"Global file list not found: {base_path}")
     with open(base_path) as f:
@@ -414,16 +414,19 @@ def has_enough_events(
     classnames,
     folder_map,
     event_count_json_path="src/utils/nEvents_scan/file_event_counts.json",
+    train_classnames=None,
 ) -> bool:
     """
-    Returns True only if all splits/classes meet required total events
+    Returns True only if all splits/classes meet required total events.
 
     Args:
         target: Directory that contains train/val/test/{folder}/
         train_val_test_split_per_class: e.g. [50_000, 20_000, 20_000]
-        classnames: list like ["QCD", "ggHbb"]
+        classnames: list like ["QCD_inclusive", "VH_incl"] — used for val/test
         folder_map: mapping class_name -> folder name used in vectorized dir
         event_count_json_path: path to JSON with event counts per parquet file
+        train_classnames: if provided, only these classes are checked for the
+            train split (used for background-only AD training)
     """
 
     if not target or not os.path.exists(target):
@@ -437,9 +440,14 @@ def has_enough_events(
         event_db = json.load(f)
 
     split_names = ["train", "val", "test"]
+    classnames_per_split = {
+        "train": train_classnames if train_classnames is not None else classnames,
+        "val": classnames,
+        "test": classnames,
+    }
 
     for split, needed_events in zip(split_names, train_val_test_split_per_class):
-        for cname in classnames:
+        for cname in classnames_per_split[split]:
             folder = folder_map[cname]         # e.g. "QCD_HT50toInf"
             split_dir = os.path.join(target, split, folder)
 
