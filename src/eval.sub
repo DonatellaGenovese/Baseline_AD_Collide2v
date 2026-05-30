@@ -1,14 +1,18 @@
 # ================================
-# Condor submission: full pipeline (Apptainer)
+# Condor submission: AD evaluation
+# Usage: condor_submit src/eval.sub
 # ================================
 
 executable = src/wrapper_eval.sh
 arguments  = $(ClusterId)
 
+# Path to checkpoint to evaluate
+CKPT_PATH = /afs/cern.ch/user/d/dgenoves/Baseline_AD_Collide2v/logs/train/runs/YYYY-MM-DD_HH-MM-SS/checkpoints/epoch_XXX.ckpt
+
 # --- Logs ---
-output = /afs/cern.ch/work/p/phploner/foundation_model_testing/logs/condor_logs/job_$(ClusterId).out
-error  = /afs/cern.ch/work/p/phploner/foundation_model_testing/logs/condor_logs/job_$(ClusterId).err
-log    = /afs/cern.ch/work/p/phploner/foundation_model_testing/logs/condor_logs/job_$(ClusterId).log
+output = /afs/cern.ch/user/d/dgenoves/Baseline_AD_Collide2v/logs/condor/job_$(ClusterId).out
+error  = /afs/cern.ch/user/d/dgenoves/Baseline_AD_Collide2v/logs/condor/job_$(ClusterId).err
+log    = /afs/cern.ch/user/d/dgenoves/Baseline_AD_Collide2v/logs/condor/job_$(ClusterId).log
 
 # --- Run job as your CERN user (needed for EOS writes) ---
 run_as_owner = True
@@ -21,6 +25,8 @@ getenv = True
 request_cpus = 6
 request_gpus = 1
 
-environment = "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4"
+Requirements = (TARGET.GPUs_GlobalMemoryMb >= 10000)
+
+environment = "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 AD_CKPT_PATH=$(CKPT_PATH)"
 
 queue

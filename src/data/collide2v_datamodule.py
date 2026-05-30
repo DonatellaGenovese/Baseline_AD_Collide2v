@@ -213,7 +213,7 @@ class COLLIDE2VDataModule(LightningDataModule):
             train_classnames=self.train_classnames,
         ):
             print(f"🟡 Preprocessed data found — using from {self.paths['eos_preproc_dir']}")
-            # AD mode: train on background only; val/test on all classes for AUC
+            # AD mode: train+val on background only; test on all classes for AUC
             self.trainstream = LocalVectorDataset(
                 os.path.join(self.paths["eos_preproc_dir"], "train"),
                 per_class_limit=self.train_val_test_split_per_class[0],
@@ -225,7 +225,7 @@ class COLLIDE2VDataModule(LightningDataModule):
                 os.path.join(self.paths["eos_preproc_dir"], "val"),
                 per_class_limit=self.train_val_test_split_per_class[1],
                 shuffle_file_order=False,
-                classnames=self.classnames,
+                classnames=self.train_classnames,
                 folder_map=self.folder,
             )
             self.teststream = LocalVectorDataset(
@@ -266,7 +266,7 @@ class COLLIDE2VDataModule(LightningDataModule):
         return DataLoader(
             dataset=self.valstream,
             batch_size=self.batch_size_per_device,
-            num_workers=0,
+            num_workers=self.num_workers,
             pin_memory=self.pin_memory,
             worker_init_fn=worker_init_fn,
             shuffle=False
@@ -280,7 +280,7 @@ class COLLIDE2VDataModule(LightningDataModule):
         return DataLoader(
             dataset=self.teststream,
             batch_size=self.batch_size_per_device,
-            num_workers=0,
+            num_workers=self.num_workers,
             pin_memory=self.pin_memory,
             worker_init_fn=worker_init_fn,
             shuffle=False

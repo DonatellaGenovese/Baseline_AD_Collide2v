@@ -6,7 +6,7 @@ hidden_dims: [256, 128, 64]
 # Weight of the KL term in the ELBO: loss = recon + beta * KL
 # beta=1 is standard VAE; beta<1 relaxes the prior pressure (useful when AD
 # performance degrades because the latent space is too tightly constrained).
-beta: 1.0
+beta: 0.1
 
 # Anomaly score used for AUROC: "reconstruction" (MSE only) or "elbo" (MSE + beta*KL)
 anomaly_score_type: "reconstruction"

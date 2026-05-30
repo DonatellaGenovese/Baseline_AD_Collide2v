@@ -146,7 +146,7 @@ def save_feature_map(config, out_dir: str, vlen: int):
     feature_map = {}
     offset = 0
 
-    config_dict = OmegaConf.to_container(config, resolve=True)
+    config_dict = OmegaConf.to_container(config, resolve=True) if OmegaConf.is_config(config) else config
 
     for group_name, cfg in config_dict.items():
         cols = cfg["cols"]

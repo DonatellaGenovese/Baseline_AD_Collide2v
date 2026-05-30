@@ -1,7 +1,7 @@
 _target_: src.data.collide2v_datamodule.COLLIDE2VDataModule
 batch_size: 2048
 train_val_test_split_per_class: [500_000, 20_000, 20_000]
-num_workers: 6
+num_workers: 27
 pin_memory: true
 
 preprocess: ${preprocess}
@@ -9,7 +9,7 @@ preprocess: ${preprocess}
 # IMPORTANT: IF YOU CHANGE THE SPLITS OR ANY DATASET CONFIG, CHOOSE A NEW LABEL OR DELETE DATA FOR EXISTING LABELS TO AVOID CONFLICTS!
 label: "AD_QCD_VBFHbb"
 
-# AD MODE: train on background only, val/test on background + signal for AUC evaluation.
+# AD MODE: train+val on background only, test on background + signal for AUC evaluation.
 # Set to the name of the background class in to_classify.
 background_class: "QCD_inclusive"
 

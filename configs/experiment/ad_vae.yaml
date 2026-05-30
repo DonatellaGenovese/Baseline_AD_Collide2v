@@ -85,8 +85,8 @@ trainer:
 model:
   latent_dim: 16
   hidden_dims: [256, 128, 64]
-  beta: 1.0
-  anomaly_score_type: "reconstruction"
+  beta: 0.1
+  anomaly_score_type: "elbo_reconstruction"  # options: "reconstruction", "elbo_reconstruction", "elbo"
 
 preprocess:
   enabled: true

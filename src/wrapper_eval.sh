@@ -1,55 +1,30 @@
 #!/bin/bash
 # =====================================================
-#  HTCondor wrapper for foundation_model_testing pipeline
+#  HTCondor wrapper for AD evaluation
 # =====================================================
 
 set -euo pipefail
 
-echo "[`date`] Starting Condor job on $(hostname)"
-echo "[`date`] Running as $(whoami)"
-echo "Working directory: $(pwd)"
+echo "[$(date)] Starting Condor job on $(hostname)"
+echo "[$(date)] Running as $(whoami)"
 
-# --- Paths ---
-PROJECT_DIR=/afs/cern.ch/work/p/phploner/foundation_model_testing
-IMAGE=${PROJECT_DIR}/fm_testing.sif
+PROJECT_DIR=/afs/cern.ch/user/d/dgenoves/Baseline_AD_Collide2v
+PYTHON=/eos/user/d/dgenoves/conda_envs/collidenv/bin/python3
+CKPT_PATH="${AD_CKPT_PATH:-}"
 
-SEED="${HYDRA_SEED:-24}"
-
-# --- Go to project directory ---
 cd ${PROJECT_DIR}
 
-# --- Sanity check: Python version ---
-apptainer exec ${IMAGE} python -V || true
+mkdir -p ${PROJECT_DIR}/logs/condor
 
-## Determine accelerator from full Hydra composition
-ACCELERATOR=$(python - << 'EOF'
-from hydra import initialize, compose
-
-with initialize(version_base="1.3", config_path="configs"):
-    cfg = compose(config_name="eval.yaml")
-
-print(cfg.trainer.get("accelerator", "cpu"))
-EOF
-)
-
-# Pick Apptainer flags
-APPTAINER_FLAGS="--bind /afs:/afs --bind /eos:/eos --writable-tmpfs --env CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES --env NVIDIA_VISIBLE_DEVICES=all"
-
-if [ "$ACCELERATOR" = "gpu" ]; then
-    echo "[wrapper] GPU requested → enabling --nv"
-    APPTAINER_FLAGS="--nv $APPTAINER_FLAGS"
-else
-    echo "[wrapper] CPU mode → running without --nv"
+if [ -z "${CKPT_PATH}" ]; then
+    echo "ERROR: AD_CKPT_PATH is not set. Set CKPT_PATH in eval.sub."
+    exit 1
 fi
 
-# --- Run evaluation inside container ---
-echo "[wrapper] Running evaluation with flags: $APPTAINER_FLAGS"
+echo "[$(date)] Evaluating checkpoint: ${CKPT_PATH}"
 
-apptainer exec $APPTAINER_FLAGS "${IMAGE}" bash -lc "
-  python src/eval.py
-"
+${PYTHON} src/eval.py ckpt_path=${CKPT_PATH}
 
 EXIT_CODE=$?
-
-echo "[`date`] Job finished with exit code ${EXIT_CODE}"
+echo "[$(date)] Job finished with exit code ${EXIT_CODE}"
 exit ${EXIT_CODE}

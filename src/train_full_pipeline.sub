@@ -1,17 +1,19 @@
 # ================================
-# Condor submission: full pipeline (Apptainer)
+# Condor submission: AD training
+# Usage: condor_submit src/train_full_pipeline.sub
+# To choose experiment: condor_submit src/train_full_pipeline.sub EXPERIMENT=ad_vae
 # ================================
 
 executable = src/wrapper_full_pipeline.sh
 arguments  = $(ClusterId)
 
-# Choose sweep seed (change once per submission for optuna sweeps)
-SEED = 15
+# Experiment to run: ad_ae or ad_vae
+EXPERIMENT = ad_ae
 
 # --- Logs ---
-output = /afs/cern.ch/work/p/phploner/foundation_model_testing/logs/condor_logs/job_$(ClusterId).out
-error  = /afs/cern.ch/work/p/phploner/foundation_model_testing/logs/condor_logs/job_$(ClusterId).err
-log    = /afs/cern.ch/work/p/phploner/foundation_model_testing/logs/condor_logs/job_$(ClusterId).log
+output = /afs/cern.ch/user/d/dgenoves/Baseline_AD_Collide2v/logs/condor/job_$(ClusterId).out
+error  = /afs/cern.ch/user/d/dgenoves/Baseline_AD_Collide2v/logs/condor/job_$(ClusterId).err
+log    = /afs/cern.ch/user/d/dgenoves/Baseline_AD_Collide2v/logs/condor/job_$(ClusterId).log
 
 # --- Run job as your CERN user (needed for EOS writes) ---
 run_as_owner = True
@@ -24,9 +26,8 @@ getenv = True
 request_cpus = 6
 request_gpus = 1
 
-# Require at least 40 GB GPU memory
-Requirements = (TARGET.GPUs_GlobalMemoryMb >= 40000)
+Requirements = (TARGET.GPUs_GlobalMemoryMb >= 10000)
 
-environment = "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HYDRA_SEED=$(SEED)"
+environment = "OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 AD_EXPERIMENT=$(EXPERIMENT)"
 
 queue
